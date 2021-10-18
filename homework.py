@@ -5,7 +5,6 @@ import time
 import requests
 import telegram
 from dotenv import load_dotenv
-from requests.api import head
 
 logging.basicConfig(
     level=logging.INFO,
@@ -77,11 +76,18 @@ def main():
     url = ENDPOINT
     while True:
         try:
-            ...
+            get_api_answer_result = get_api_answer(url, current_timestamp)
+            check_response_result = check_response(get_api_answer_result)
+            if check_response_result:
+                for homework in check_response_result:
+                    parse_status_result = parse_status(homework)
+                    send_message(bot, parse_status_result)
             time.sleep(RETRY_TIME)
         except Exception as error:
-            message = f'Сбой в работе программы: {error}'
-            ...
+            logging.error('Бот недееспособен')
+            bot.send_message(
+                chat_id=CHAT_ID, text=f'Сбой в работе программы: {error}'
+            )
             time.sleep(RETRY_TIME)
             continue
 
