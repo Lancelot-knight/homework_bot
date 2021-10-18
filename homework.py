@@ -30,13 +30,13 @@ HOMEWORK_STATUSES = {
 
 
 def send_message(bot, message):
-    """Отправка сообщений"""
+    """Отправка сообщений."""
     logging.info(f'message send {message}')
     return bot.send_message(chat_id=CHAT_ID, text=message)
 
 
 def get_api_answer(url, current_timestamp):
-    """Запрос информации от сервера"""
+    """Запрос информации от сервера."""
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     payload = {'from_date': current_timestamp}
     homework_status = requests.get(url, headers=headers, params=payload)
@@ -47,7 +47,7 @@ def get_api_answer(url, current_timestamp):
 
 
 def parse_status(homework):
-    """Парсим статус домашки"""
+    """Парсим статус домашки."""
     verdict = HOMEWORK_STATUSES[homework.get('status')]
     homework_name = homework.get('homework_name')
     if homework_name is None:
@@ -58,7 +58,7 @@ def parse_status(homework):
 
 
 def check_response(response):
-    """Проверяем запрос"""
+    """Проверяем запрос."""
     homeworks = response.get('homeworks')
     for homework in homeworks:
         status = homework.get('status')
@@ -70,7 +70,7 @@ def check_response(response):
 
 
 def main():
-    '''Главный цикл работы'''
+    """Главный цикл работы."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     url = ENDPOINT
