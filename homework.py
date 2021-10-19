@@ -62,7 +62,7 @@ def check_response(response):
     homeworks = response.get('homeworks')
     for homework in homeworks:
         status = homework.get('status')
-        if status in HOMEWORK_STATUSES.keys():
+        if status in HOMEWORK_STATUSES:
             return homeworks
         else:
             raise Exception('Нет статуса работы')
@@ -73,23 +73,21 @@ def main():
     """Главный цикл работы."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    url = ENDPOINT
     while True:
         try:
-            get_api_answer_result = get_api_answer(url, current_timestamp)
-            check_response_result = check_response(get_api_answer_result)
-            if check_response_result:
-                for homework in check_response_result:
+            get_result = get_api_answer(ENDPOINT, current_timestamp)
+            check_result = check_response(get_result)
+            if check_result:
+                for homework in check_result:
                     parse_status_result = parse_status(homework)
                     send_message(bot, parse_status_result)
             time.sleep(RETRY_TIME)
         except Exception as error:
             logging.error('Бот недееспособен')
-            bot.send_message(
+            send_message(
                 chat_id=CHAT_ID, text=f'Сбой в работе программы: {error}'
             )
             time.sleep(RETRY_TIME)
-            continue
 
 
 if __name__ == '__main__':
