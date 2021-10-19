@@ -36,6 +36,7 @@ TOKENS = [
 
 
 class NegativeError(Exception):
+    """Кастомное исключение."""
     pass
 
 
