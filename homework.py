@@ -29,21 +29,34 @@ HOMEWORK_STATUSES = {
 }
 
 
+class NegativeError(Exception):
+    pass
+
+
 def send_message(bot, message):
     """Отправка сообщений."""
-    logging.info(f'message send {message}')
-    return bot.send_message(chat_id=CHAT_ID, text=message)
+    try:
+        bot.send_message(chat_id=CHAT_ID, text=message)
+    except Exception as error:
+        print(error)
 
 
 def get_api_answer(url, current_timestamp):
     """Запрос информации от сервера."""
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     payload = {'from_date': current_timestamp}
-    homework_status = requests.get(url, headers=headers, params=payload)
-    if homework_status.status_code != 200:
-        raise Exception('Ошибка при получении ответа с сервера')
+    try:
+        response = requests.get(url, headers=headers, params=payload)
+    except requests.RequestException as error:
+        print(error)
+    except ValueError as error:
+        print(error)
+
+    if response.status_code != 200:
+        raise NegativeError('Ошибка при получении ответа с сервера')
+
     logging.info('Сервер на связи')
-    return homework_status.json()
+    return response.json()
 
 
 def parse_status(homework):
@@ -51,9 +64,9 @@ def parse_status(homework):
     verdict = HOMEWORK_STATUSES[homework.get('status')]
     homework_name = homework.get('homework_name')
     if homework_name is None:
-        raise Exception('У домашки нет имени')
+        raise NegativeError('У домашки нет имени')
     if verdict is None:
-        raise Exception('Нет статуса работы')
+        raise NegativeError('Нет статуса работы')
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -65,7 +78,7 @@ def check_response(response):
         if status in HOMEWORK_STATUSES:
             return homeworks
         else:
-            raise Exception('Нет статуса работы')
+            raise NegativeError('Нет статуса работы')
     return homeworks
 
 
