@@ -82,6 +82,10 @@ def parse_status(homework):
 def check_response(response):
     """Проверяем запрос."""
     homeworks = response.get('homeworks')
+    if homeworks is None:
+        raise NegativeError("Нет списка 'homework'")
+    if (type(homeworks) != list) and (len(homeworks) == 0):
+        raise NegativeError("Неверный формат 'homework'")
     for homework in homeworks:
         status = homework.get('status')
         if status in HOMEWORK_STATUSES:
@@ -100,11 +104,10 @@ def main():
     except Exception as error:
         logging.critical('Бот не инициализирован: '
                          f'{error}')
-
-    current_timestamp = int(time.time())
+    current_time = int(time.time())
     while True:
         try:
-            get_result = get_api_answer(ENDPOINT, current_timestamp)
+            get_result = get_api_answer(ENDPOINT, current_time)
             check_result = check_response(get_result)
             if check_result:
                 for homework in check_result:
