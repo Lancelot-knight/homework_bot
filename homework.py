@@ -28,6 +28,12 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена, в ней нашлись ошибки.'
 }
 
+TOKENS = [
+    PRACTICUM_TOKEN,
+    TELEGRAM_TOKEN,
+    CHAT_ID
+]
+
 
 class NegativeError(Exception):
     pass
@@ -84,7 +90,14 @@ def check_response(response):
 
 def main():
     """Главный цикл работы."""
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    if not all(TOKENS):
+        logging.critical('Отсутствуют переменные окружения')
+    try:
+        bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    except Exception as error:
+        logging.critical('Бот не инициализирован: '
+                         f'{error}')
+
     current_timestamp = int(time.time())
     while True:
         try:
