@@ -67,6 +67,9 @@ def get_api_answer(url, current_timestamp):
 
 def parse_status(homework):
     """Парсим статус домашки."""
+    status = homework.get('status')
+    if status is None:
+        raise NegativeError('Нет статуса работы')
     verdict = HOMEWORK_STATUSES[homework.get('status')]
     homework_name = homework.get('homework_name')
     if homework_name is None:
