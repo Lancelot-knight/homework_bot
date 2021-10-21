@@ -38,12 +38,9 @@ class NegativeError(Exception):
 def send_message(bot, message):
     """Отправка сообщений."""
     try:
-        bot = telegram.Bot(token=TELEGRAM_TOKEN)
         bot.send_message(chat_id=CHAT_ID, text=message)
-    except telegram.error.NetworkError as error:
-        logging.error(f'Ошибка сети: {error}')
-    except telegram.error.InvalidToken as error:
-        logging.error(f'Токен недействителен: {error}')
+    except telegram.error.TelegramError as error:
+        logging.error(f'Ошибка: {error}')
 
 
 def get_api_answer(url, current_timestamp):
@@ -56,8 +53,6 @@ def get_api_answer(url, current_timestamp):
         logging.error(f'Ошибка запроса: {error}')
     except ValueError as error:
         logging.error(f'У функции несоответствующее значение : {error}')
-    except telegram.error.InvalidToken as error:
-        logging.error(f'Токен недействителен: {error}')
 
     if response.status_code != 200:
         raise NegativeError('Ошибка при получении ответа с сервера')
@@ -83,12 +78,14 @@ def check_response(response):
     homeworks = response.get('homeworks')
     if homeworks is None:
         raise NegativeError("Нет списка 'homework'")
-    if not isinstance(homeworks, list) or not homeworks:
+    if not isinstance(homeworks, list):
         raise NegativeError("Неверный формат 'homework'")
+    if not homeworks:
+        return False
     for homework in homeworks:
         status = homework.get('status')
         if status in HOMEWORK_STATUSES:
-            return homeworks
+            return homework
         else:
             raise NegativeError('Нет статуса работы')
 
