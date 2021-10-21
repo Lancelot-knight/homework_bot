@@ -51,14 +51,13 @@ def get_api_answer(url, current_timestamp):
     payload = {'from_date': current_timestamp}
     try:
         response = requests.get(url, headers=headers, params=payload)
+        if response.status_code != 200:
+            raise NegativeError('Ошибка при получении ответа с сервера')
         return response.json()
     except requests.RequestException as error:
         logging.error(f'Ошибка запроса: {error}')
     except ValueError as error:
         logging.error(f'У функции несоответствующее значение : {error}')
-
-    if response.status_code != 200:
-        raise NegativeError('Ошибка при получении ответа с сервера')
 
     logging.info('Сервер на связи')
 
