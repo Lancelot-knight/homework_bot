@@ -28,12 +28,6 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена, в ней нашлись ошибки.'
 }
 
-TOKENS = [
-    PRACTICUM_TOKEN,
-    TELEGRAM_TOKEN,
-    CHAT_ID
-]
-
 
 class NegativeError(Exception):
     """Кастомное исключение."""
@@ -44,9 +38,12 @@ class NegativeError(Exception):
 def send_message(bot, message):
     """Отправка сообщений."""
     try:
+        bot = telegram.Bot(token=TELEGRAM_TOKEN)
         bot.send_message(chat_id=CHAT_ID, text=message)
-    except Exception as error:
-        print(error)
+    except telegram.error.NetworkError as error:
+        logging.error(f'Ошибка сети: {error}')
+    except telegram.error.InvalidToken as error:
+        logging.error(f'Токен недействителен: {error}')
 
 
 def get_api_answer(url, current_timestamp):
@@ -56,9 +53,11 @@ def get_api_answer(url, current_timestamp):
     try:
         response = requests.get(url, headers=headers, params=payload)
     except requests.RequestException as error:
-        print(error)
+        logging.error(f'Ошибка запроса: {error}')
     except ValueError as error:
-        print(error)
+        logging.error(f'У функции несоответствующее значение : {error}')
+    except telegram.error.InvalidToken as error:
+        logging.error(f'Токен недействителен: {error}')
 
     if response.status_code != 200:
         raise NegativeError('Ошибка при получении ответа с сервера')
@@ -69,15 +68,13 @@ def get_api_answer(url, current_timestamp):
 
 def parse_status(homework):
     """Парсим статус домашки."""
-    status = homework.get('status')
-    if status is None:
-        raise NegativeError('Нет статуса работы')
-    verdict = HOMEWORK_STATUSES[homework.get('status')]
     homework_name = homework.get('homework_name')
     if homework_name is None:
         raise NegativeError('У домашки нет имени')
-    if verdict is None:
+    status = homework.get('status')
+    if status is None:
         raise NegativeError('Нет статуса работы')
+    verdict = HOMEWORK_STATUSES[status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -86,7 +83,7 @@ def check_response(response):
     homeworks = response.get('homeworks')
     if homeworks is None:
         raise NegativeError("Нет списка 'homework'")
-    if (type(homeworks) != list) and (len(homeworks) == 0):
+    if not isinstance(homeworks, list) or not homeworks:
         raise NegativeError("Неверный формат 'homework'")
     for homework in homeworks:
         status = homework.get('status')
@@ -94,18 +91,11 @@ def check_response(response):
             return homeworks
         else:
             raise NegativeError('Нет статуса работы')
-    return homeworks
 
 
 def main():
     """Главный цикл работы."""
-    if not all(TOKENS):
-        logging.critical('Отсутствуют переменные окружения')
-    try:
-        bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    except Exception as error:
-        logging.critical('Бот не инициализирован: '
-                         f'{error}')
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_time = int(time.time())
     while True:
         try:
@@ -115,12 +105,10 @@ def main():
                 for homework in check_result:
                     parse_status_result = parse_status(homework)
                     send_message(bot, parse_status_result)
+            current_time = get_result.get('current_date')
             time.sleep(RETRY_TIME)
         except Exception as error:
-            logging.error('Бот недееспособен')
-            send_message(
-                chat_id=CHAT_ID, text=f'Сбой в работе программы: {error}'
-            )
+            logging.error(f'Бот недееспособен, ошибка: {error}')
             time.sleep(RETRY_TIME)
 
 
