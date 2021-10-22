@@ -45,7 +45,6 @@ def send_message(bot, message):
 
 def get_api_answer(url, current_timestamp):
     """Запрос информации от сервера."""
-    # python lazy logical evaluation =)
     current_timestamp = current_timestamp or int(time.time())
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     payload = {'from_date': current_timestamp}
@@ -53,13 +52,14 @@ def get_api_answer(url, current_timestamp):
         response = requests.get(url, headers=headers, params=payload)
         if response.status_code != 200:
             raise NegativeError('Ошибка при получении ответа с сервера')
+        logging.info('Сервер на связи')
         return response.json()
     except requests.RequestException as error:
         logging.error(f'Ошибка запроса: {error}')
+        return False
     except ValueError as error:
         logging.error(f'У функции несоответствующее значение : {error}')
-
-    logging.info('Сервер на связи')
+        return False
 
 
 def parse_status(homework):
@@ -110,6 +110,9 @@ def main():
             if error != old_error:
                 old_error = error
                 send_message(bot, f'Сбой в работе: {error}')
+                logging.error(f'Бот недееспособен, ошибка: {error}')
+                time.sleep(RETRY_TIME)
+            else:
                 logging.error(f'Бот недееспособен, ошибка: {error}')
                 time.sleep(RETRY_TIME)
 
