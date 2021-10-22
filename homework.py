@@ -10,7 +10,11 @@ logging.basicConfig(
     level=logging.INFO,
     filename='main.log',
     format='%(asctime)s, %(levelname)s, %(message)s',
-    filemode='a'
+    filemode='a',
+)
+logger = logging.getLogger(__name__)
+logger.addHandler(
+    logging.StreamHandler()
 )
 
 load_dotenv()
@@ -40,7 +44,7 @@ def send_message(bot, message):
     try:
         bot.send_message(chat_id=CHAT_ID, text=message)
     except telegram.error.TelegramError as error:
-        logging.error(f'Ошибка: {error}')
+        logger.error(f'Ошибка: {error}')
 
 
 def get_api_answer(url, current_timestamp):
@@ -52,14 +56,16 @@ def get_api_answer(url, current_timestamp):
         response = requests.get(url, headers=headers, params=payload)
         if response.status_code != 200:
             raise NegativeError('Ошибка при получении ответа с сервера')
-        logging.info('Сервер на связи')
+        logger.info('Сервер на связи')
         return response.json()
-    except requests.RequestException as error:
-        logging.error(f'Ошибка запроса: {error}')
-        return False
-    except ValueError as error:
-        logging.error(f'У функции несоответствующее значение : {error}')
-        return False
+    except requests.RequestException as request_error:
+        msg = f'Код ответа API (RequestException): {request_error}'
+        logger.error(msg)
+        raise NegativeError(msg)
+    except ValueError as value_error:
+        msg = f'Код ответа API (ValueError): {value_error}'
+        logger.error(msg)
+        raise NegativeError(msg)
 
 
 def parse_status(homework):
@@ -95,7 +101,7 @@ def main():
     """Главный цикл работы."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_time = int(time.time())
-    old_error = None
+    errors = False
     while True:
         try:
             get_result = get_api_answer(ENDPOINT, current_time)
@@ -107,14 +113,12 @@ def main():
             current_time = get_result.get('current_date')
             time.sleep(RETRY_TIME)
         except Exception as error:
-            if error != old_error:
-                old_error = error
-                send_message(bot, f'Сбой в работе: {error}')
-                logging.error(f'Бот недееспособен, ошибка: {error}')
-                time.sleep(RETRY_TIME)
-            else:
-                logging.error(f'Бот недееспособен, ошибка: {error}')
-                time.sleep(RETRY_TIME)
+            message = f'Бот недеесспособен, ошибка: {error}'
+            if errors:
+                errors = False
+                send_message(bot, message)
+            logger.critical(message)
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
