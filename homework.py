@@ -107,10 +107,8 @@ def main():
             get_result = get_api_answer(ENDPOINT, current_time)
             check_result = check_response(get_result)
             if check_result:
-                for homework in check_result:
-                    parse_status_result = parse_status(homework)
-                    send_message(bot, parse_status_result)
-            current_time = get_result.get('current_date')
+                message = parse_status(check_result)
+                send_message(bot, message)
             time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Бот недеесспособен, ошибка: {error}'
