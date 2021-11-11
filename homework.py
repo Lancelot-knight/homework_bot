@@ -89,12 +89,11 @@ def check_response(response):
         raise NegativeError("Неверный формат 'homework'")
     if not homeworks:
         return False
-    for homework in homeworks:
-        status = homework.get('status')
-        if status in HOMEWORK_STATUSES:
-            return homework
-        else:
-            raise NegativeError('Нет статуса работы')
+    status = response['homeworks'][0].get('status')
+    if status in HOMEWORK_STATUSES:
+        return response['homeworks']
+    else:
+        raise NegativeError('Нет статуса работы')
 
 
 def main():
